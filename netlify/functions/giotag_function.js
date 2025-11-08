@@ -1,25 +1,31 @@
+const fetch = require("node-fetch");
 
-document.getElementById("scanBtn").addEventListener("click", async () => {
-    const statusDiv = document.getElementById("status");
-    statusDiv.textContent = "Escaneando...";
+exports.handler = async function(event, context) {
+  try {
+    const response = await fetch(
+      "https://api.github.com/repos/giotag-avalonia/giotag_priv/actions/workflows/giotag.yml/dispatches",
+      {
+        method: "POST",
+        headers: {
+          "Accept": "application/vnd.github.v3+json",
+          "Authorization": `token ${process.env.PRIV_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ ref: "main" }) // rama del repo privado
+      }
+    );
 
-    try {
-        const response = await fetch("/.netlify/functions/trigger-workflow", {
-            method: "POST"
-        });
+    if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const data = await response.json();
-
-        if (data.success) {
-            statusDiv.textContent = "Workflow activado correctamente!";
-        } else {
-            statusDiv.textContent = "Error al activar workflow.";
-        }
-    } catch (error) {
-        console.error(error);
-        statusDiv.textContent = "Error al conectar con el servidor.";
-    }
-});
-
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true })
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: error.message })
+    };
+  }
+};
