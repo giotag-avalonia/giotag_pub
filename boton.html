@@ -2,27 +2,65 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Escanear PDF</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        button {
-            background-color: #0078d4;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-        button:hover { background-color: #005a9e; }
-        #status { margin-top: 15px; font-weight: bold; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Escanear PDF</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    button {
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #005a9e;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-    <button id="scanBtn">ESCANEAR PDF</button>
-    <div id="status"></div>
+  <button id="scanBtn">ESCANEAR PDF</button>
+  <div id="status"></div>
 
-    <script src="giotag_function.js"></script>
+  <script>
+    document.getElementById("scanBtn").addEventListener("click", async () => {
+      const statusDiv = document.getElementById("status");
+      statusDiv.textContent = "⏳ Escaneando...";
+
+      try {
+        const response = await fetch("https://grand-cascaron-76df3f.netlify.app/.netlify/functions/giotag_function", {
+          method: "POST"
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        if (data.success) {
+          statusDiv.textContent = "✅ Workflow activado correctamente.";
+          statusDiv.style.color = "green";
+        } else {
+          statusDiv.textContent = "⚠️ Error al activar el workflow.";
+          statusDiv.style.color = "orange";
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        statusDiv.textContent = "❌ Error al conectar con el servidor.";
+        statusDiv.style.color = "red";
+      }
+    });
+  </script>
 </body>
 </html>
+
