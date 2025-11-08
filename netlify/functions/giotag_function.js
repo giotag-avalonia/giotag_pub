@@ -1,31 +1,42 @@
-const fetch = require("node-fetch");
-
-exports.handler = async function(event, context) {
+export async function handler(event) {
   try {
-    const response = await fetch(
-      "https://api.github.com/repos/giotag-avalonia/giotag_priv/actions/workflows/giotag.yml/dispatches",
-      {
-        method: "POST",
-        headers: {
-          "Accept": "application/vnd.github.v3+json",
-          "Authorization": `token ${process.env.PRIV_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ ref: "main" }) // rama del repo privado
-      }
-    );
+    if (event.httpMethod !== "POST") {
+      return { statusCode: 405, body: "Método no permitido" };
+    }
 
-    if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
+    const token = process.env.PRIV_TOKEN;
+    if (!token) {
+      return { statusCode: 500, body: "Falta la variable PRIV_TOKEN en Netlify." };
+    }
+
+    const workflowUrl = "https://api.github.com/repos/giotag-avalonia/giotag_priv/actions/workflows/giotag.yml/dispatches";
+
+    const payload = {
+      ref: "main" // rama del repo privado donde está tu workflow
+    };
+
+    const wfRes = await fetch(workflowUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!wfRes.ok) {
+      const text = await wfRes.text();
+      throw new Error("Error al activar workflow: " + text);
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true })
+      body: JSON.stringify({ success: true, message: "Workflow activado correctamente." })
     };
-  } catch (error) {
-    console.error(error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: error.message })
-    };
+
+  } catch (err) {
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ success: false, message: err.message }) };
   }
 };
