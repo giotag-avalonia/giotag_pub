@@ -9,10 +9,23 @@ export async function handler(event) {
       return { statusCode: 500, body: "Falta la variable PRIV_TOKEN en Netlify." };
     }
 
+    const { job, mes, anio } = JSON.parse(event.body);
+
     const workflowUrl = "https://api.github.com/repos/giotag-avalonia/giotag_priv/actions/workflows/giotag.yml/dispatches";
 
+    // Prepara payload con inputs condicionales
+    const inputs = { job };
+    if (job === "4" || job === "5") {
+      if (!mes || !anio) {
+        return { statusCode: 400, body: JSON.stringify({ success: false, message: "Mes y año son requeridos para este job." }) };
+      }
+      inputs.mes = mes;
+      inputs.anio = anio;
+    }
+
     const payload = {
-      ref: "main" // rama del repo privado donde está tu workflow
+      ref: "main", // rama donde está tu workflow
+      inputs
     };
 
     const wfRes = await fetch(workflowUrl, {
